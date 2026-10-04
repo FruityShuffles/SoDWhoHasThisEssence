@@ -2,13 +2,11 @@
 For co-op: see at a glance which essences you share with your teammates, and who could combine the essence lying in front of you.
 
 [list]
-[*][b]Scoreboard:[/b] essences that you and a teammate both have equipped get a green outline, on your row and on theirs.
-[*][b]Essence pickup prompt:[/b] a green line under the essence's name lists the teammates who have it equipped, e.g. [i](Bo, Cy)[/i]. It isn't shown when you have that essence yourself or when the essence is locked for you.
+[*][b]Tab Scoreboard:[/b] essences that you and a teammate both have equipped get a green outline.
+[*][b]Essence pickup prompt:[/b] a green line under the essence's name lists the teammates who already have it equipped, e.g. [i](Player 2)[/i]. It isn't shown when you can combine that essence yourself.
 [/list]
 
 [h2]Setting[/h2]
 [list]
-[*][b]Show duplicates between other players[/b] (off by default): also outline essences that two or more teammates share when you don't have them.
+[*][b]Show duplicates between other players[/b] (off by default): also outline essences that two or more teammates share when you don't have them. Useful if you want to call out duplicates that your teammates have.
 [/list]
-
-Only you need the mod; your teammates can play without it. It changes no gameplay and adds no MOD badge to your lobby.
