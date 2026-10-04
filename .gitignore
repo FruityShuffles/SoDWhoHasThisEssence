@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+mod/GamePath.user.props
+
+# Python
+__pycache__/
+*.pyc
+
+# Decompiled game source (never commit; copyrighted)
+decompiled/
+
+# AI tooling (kept local, not published)
+.claude/
+AGENTS.md
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
