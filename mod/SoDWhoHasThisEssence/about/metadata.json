@@ -1,0 +1,12 @@
+{
+  "id": "com.fruityshuffles.whohasthisessence",
+  "name": "Who Has This Essence?",
+  "author": "Chainfire",
+  "modVer": "0.1.0",
+  "supportedGameVer": [
+    "*"
+  ],
+  "assemblies": [
+    "SoDWhoHasThisEssence.dll"
+  ]
+}

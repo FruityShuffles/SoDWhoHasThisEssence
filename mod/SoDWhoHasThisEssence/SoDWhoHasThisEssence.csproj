@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Optional per-machine override of GameDir; see GamePath.user.props.example. -->
+  <Import Project="..\GamePath.user.props" Condition="Exists('..\GamePath.user.props')" />
+
+  <PropertyGroup>
+    <!-- Mirrors the official Mods/ModTemplate/TestMod.csproj settings. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoStdLib>true</NoStdLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RootNamespace>SoDWhoHasThisEssence</RootNamespace>
+    <AssemblyName>SoDWhoHasThisEssence</AssemblyName>
+
+    <GameDir Condition="'$(GameDir)' == '' and '$(SOD_GAME_DIR)' != ''">$(SOD_GAME_DIR)</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Shape of Dreams</GameDir>
+    <GameManagedDir>$(GameDir)\Shape of Dreams_Data\Managed</GameManagedDir>
+    <ModDeployDir>$(GameDir)\Mods\SoDWhoHasThisEssence</ModDeployDir>
+    <DeployToGame Condition="'$(DeployToGame)' == ''">true</DeployToGame>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <!-- Game / engine assemblies: compile-time only, never copied. Add more from Managed\ as needed. -->
+  <ItemGroup>
+    <GameRef Include="mscorlib;netstandard;System;System.Core" />
+    <GameRef Include="0Harmony;Dew.Core;Dew.UI" />
+    <GameRef Include="UnityEngine.CoreModule;UnityEngine.UI;UnityEngine.UIModule;UnityEngine.TextRenderingModule;Unity.TextMeshPro" />
+    <GameRef Include="Mirror;UniTask" />
+    <Reference Include="@(GameRef)">
+      <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="CheckGameDir" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(GameManagedDir)\Dew.Core.dll')"
+           Text="Shape of Dreams not found at '$(GameDir)'. Set SOD_GAME_DIR or create mod\GamePath.user.props." />
+  </Target>
+
+  <!-- Lay out the mod folder the in-game mod manager expects: <Mods>\SoDWhoHasThisEssence\{about\, SoDWhoHasThisEssence.dll}. -->
+  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
+    <ItemGroup>
+      <ModAbout Include="about\**\*" />
+      <ModDll Include="$(OutDir)SoDWhoHasThisEssence.dll;$(OutDir)SoDWhoHasThisEssence.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModAbout)" DestinationFolder="$(ModDeployDir)\about\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ModDll)" DestinationFolder="$(ModDeployDir)" SkipUnchangedFiles="true" Condition="Exists('%(FullPath)')" />
+    <Message Importance="high" Text="Deployed mod to $(ModDeployDir)" />
+  </Target>
+
+</Project>
