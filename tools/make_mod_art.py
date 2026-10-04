@@ -11,19 +11,22 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 OUT = sys.argv[1]
 SS = 4  # supersampling factor
 
-TOP = (16, 16, 34)
-BOTTOM = (34, 26, 58)
+# Background and title colors shared with the author's Archipelago mod art, so both Workshop items look related.
+TOP = (18, 14, 44)
+BOTTOM = (58, 28, 86)
+TITLE = (255, 236, 250)
+TITLE_GLOW = (190, 140, 255)
 SLOT = (36, 38, 52)
 SLOT_RIM = (97, 112, 135)
 GREEN = (60, 255, 110)  # #3CFF6E, the mod's duplicate color
 TEXT = (236, 232, 250)
-SUBTEXT = (180, 172, 210)
 
 # Crystal palettes (light, mid, dark facet).
 PURPLE = ((214, 196, 255), (150, 104, 240), (92, 48, 170))
 CYAN = ((200, 248, 255), (90, 200, 235), (34, 110, 160))
 RED = ((255, 205, 200), (235, 92, 86), (140, 36, 46))
 GOLD = ((255, 244, 200), (240, 196, 80), (160, 110, 30))
+SILVER = ((246, 246, 252), (190, 196, 212), (112, 118, 138))
 
 
 def gradient(w, h):
@@ -37,14 +40,17 @@ def gradient(w, h):
     return img
 
 
-def specks(img, n, seed):
+def stars(img, n, seed, keep_clear=()):
+    """Archipelago-style starfield; keep_clear: boxes (x0, y0, x1, y1) in final pixels left free for text."""
     rng = random.Random(seed)
     d = ImageDraw.Draw(img)
     w, h = img.size
     for _ in range(n):
-        x, y, r = rng.uniform(0, w), rng.uniform(0, h), rng.uniform(0.6, 1.8) * SS
-        a = rng.randint(40, 120)
-        d.ellipse((x - r, y - r, x + r, y + r), fill=(200, 190, 255, a))
+        x, y = rng.uniform(0, w), rng.uniform(0, h * 0.9)
+        if any(b[0] * SS <= x <= b[2] * SS and b[1] * SS <= y <= b[3] * SS for b in keep_clear):
+            continue
+        r = rng.choice([0.6, 0.8, 1.0, 1.4]) * SS
+        d.ellipse((x - r, y - r, x + r, y + r), fill=(255, 245, 255, rng.randint(90, 230)))
 
 
 def crystal(d, cx, cy, s, palette):
@@ -81,7 +87,7 @@ def slot(img, cx, cy, r, palette=None, ring=False):
 def icon():
     n = 128 * SS
     img = gradient(n, n).convert("RGBA")
-    specks(img, 30, 3)
+    stars(img, 40, 3)
     r = 25 * SS
     slot(img, 37 * SS, 44 * SS, r, PURPLE, ring=True)
     slot(img, 91 * SS, 84 * SS, r, PURPLE, ring=True)
@@ -89,38 +95,42 @@ def icon():
 
 
 def preview():
+    """Laid out like the Archipelago preview: glowing serif title and subtitle on the left, the picture on the right."""
     w, h = 1280, 720
     W, H = w * SS, h * SS
     img = gradient(W, H).convert("RGBA")
-    specks(img, 160, 7)
+    stars(img, 260, 9, keep_clear=[(60, 110, 640, 430), (700, 150, 1250, 570)])
+
+    lines, x, y0 = ["Who Has", "This Essence?"], 80 * SS, 130 * SS
+    size = 118
+    while True:
+        title = ImageFont.truetype("C:/Windows/Fonts/constanb.ttf", size * SS)
+        if max(title.getlength(t) for t in lines) <= 560 * SS:
+            break
+        size -= 2
+    sub = ImageFont.truetype("C:/Windows/Fonts/segoeuil.ttf", 40 * SS)
+    small = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 32 * SS)
+    line_h = int(size * 1.08) * SS
+    glow = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    g = ImageDraw.Draw(glow)
+    for i, t in enumerate(lines):
+        g.text((x, y0 + i * line_h), t, font=title, fill=TITLE_GLOW + (180,))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(14 * SS)))
     d = ImageDraw.Draw(img)
+    for i, t in enumerate(lines):
+        d.text((x, y0 + i * line_h), t, font=title, fill=TITLE + (255,))
+    d.text((x + 6 * SS, y0 + len(lines) * line_h + 40 * SS), "Shape of Dreams", font=sub, fill=(222, 206, 255, 255))
 
-    title = ImageFont.truetype("C:/Windows/Fonts/constanb.ttf", 96 * SS)
-    sub = ImageFont.truetype("C:/Windows/Fonts/segoeuil.ttf", 36 * SS)
-    small = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 30 * SS)
-    d.text((W / 2, 110 * SS), "Who Has This Essence?", font=title, fill=TEXT, anchor="mm")
-    d.text((W / 2, 190 * SS), "See which teammates can combine the essence at your feet", font=sub, fill=SUBTEXT,
-           anchor="mm")
-
-    # Left: three scoreboard rows; the shared purple essence is ringed on two of them.
-    rows = [("You", [PURPLE, CYAN, None]), ("Bo", [RED, PURPLE, GOLD]), ("Cy", [CYAN, None, GOLD])]
-    r = 34 * SS
-    x0, y0 = 110 * SS, 300 * SS
+    # Scoreboard-style rows: the essence you share with a teammate is ringed on both rows; nothing else is.
+    rows = [("You", [PURPLE, CYAN, None]), ("Player 2", [RED, PURPLE, GOLD]), ("Player 3", [SILVER, None, None])]
+    r = 40 * SS
+    x0, y0 = 720 * SS, 230 * SS
     for i, (name, gems) in enumerate(rows):
-        y = y0 + i * 125 * SS
+        y = y0 + i * 130 * SS
         d.text((x0, y), name, font=small, fill=TEXT, anchor="lm")
         for j, pal in enumerate(gems):
-            slot(img, x0 + (150 + j * 95) * SS, y, r, pal, ring=pal is PURPLE)
+            slot(img, x0 + (210 + j * 110) * SS, y, r, pal, ring=pal is PURPLE)
         d = ImageDraw.Draw(img)
-
-    # Right: the pickup prompt over a ground essence you don't have, with the mod's line under the name.
-    px, py = 900 * SS, 330 * SS
-    d.rounded_rectangle((px - 260 * SS, py - 50 * SS, px + 260 * SS, py + 30 * SS), radius=12 * SS,
-                        fill=(24, 22, 40, 230), outline=(120, 104, 180), width=2 * SS)
-    d.text((px, py - 10 * SS), "(100%) Essence of Embers", font=small, fill=(255, 196, 90), anchor="mm")
-    d.text((px, py + 62 * SS), "(Bo, Cy)", font=small, fill=GREEN, anchor="mm")
-    d.text((px, py + 120 * SS), "[F] Equip      [Hold F] Dismantle", font=small, fill=SUBTEXT, anchor="mm")
-    slot(img, px, py + 250 * SS, 48 * SS, GOLD)
 
     img.convert("RGB").resize((w, h), Image.LANCZOS).save(f"{OUT}/preview.png", optimize=True)
 
