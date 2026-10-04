@@ -20,7 +20,6 @@ dotnet build mod/SoDWhoHasThisEssence.sln
 
 This deploys to `<game>/Mods/SoDWhoHasThisEssence/` (`-p:DeployToGame=false` skips that). If the game isn't in the
 default Steam folder, set `SOD_GAME_DIR` or copy `mod/GamePath.user.props.example` to `mod/GamePath.user.props`.
-The art in `about/` is rendered by `tools/make_mod_art.py` (Pillow).
 
 ## License
 
