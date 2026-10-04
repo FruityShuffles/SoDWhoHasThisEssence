@@ -25,16 +25,17 @@ namespace SoDWhoHasThisEssence.Patches
             try
             {
                 if (__instance.nameText == null) return;
-                var text = LineText(__instance.interactable as Gem);
+                var show = BuildLineText(__instance.interactable as Gem);
                 var anchor = RowOf(__instance);
                 var line = FindLine(anchor);
-                if (text == null)
+                if (!show)
                 {
                     if (line != null && line.gameObject.activeSelf) line.gameObject.SetActive(false);
                     return;
                 }
                 if (line == null) line = CreateLine(__instance, anchor);
-                if (line.text != text) line.text = text;
+                // Runs every logic update: only allocate the string when the names changed.
+                if (!SameText(Text, line.text)) line.text = Text.ToString();
                 if (!line.gameObject.activeSelf) line.gameObject.SetActive(true);
             }
             catch (Exception e)
@@ -43,22 +44,31 @@ namespace SoDWhoHasThisEssence.Patches
             }
         }
 
-        // "(Bo, Cy)": every other hero with this essence type equipped, or null when the line must be hidden.
-        private static string LineText(Gem gem)
+        // Fills Text with "(Bo, Cy)": every other hero with this essence type equipped. False when the line must be hidden.
+        private static bool BuildLineText(Gem gem)
         {
-            if (gem == null || gem.isLocked) return null;
-            var local = Duplicates.LocalHero;
-            if (local == null) return null;
-            var owners = Duplicates.OwnersOf(gem.GetType());
-            if (owners.Contains(local)) return null; // vanilla shows Combine
             Text.Clear();
+            if (gem == null || gem.isLocked) return false;
+            var local = Duplicates.LocalHero;
+            if (local == null) return false;
+            var owners = Duplicates.OwnersOf(gem.GetType());
+            if (owners.Contains(local)) return false; // vanilla shows Combine
             foreach (var hero in owners)
             {
                 Text.Append(Text.Length == 0 ? "(" : ", ");
                 Text.Append(hero.owner != null ? hero.owner.playerName : hero.name);
             }
-            if (Text.Length == 0) return null;
-            return Text.Append(')').ToString();
+            if (Text.Length == 0) return false;
+            Text.Append(')');
+            return true;
+        }
+
+        private static bool SameText(StringBuilder sb, string s)
+        {
+            if (s == null || sb.Length != s.Length) return false;
+            for (var i = 0; i < s.Length; i++)
+                if (sb[i] != s[i]) return false;
+            return true;
         }
 
         // The prompt root's child that holds the name line; the new line goes right after it.
